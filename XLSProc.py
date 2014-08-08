@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-
+from PyQt4.QtCore import *
 import xlrd
 import xlwt
 import openpyxl
@@ -8,8 +8,9 @@ import openpyxl
 import sys
 import re
 
-class SpreadSheetQuickSheet97(object):
-    def __init__(self,h):
+class SpreadSheetQuickSheet97(QObject):
+    def __init__(self,h,parent = None):
+        QObject.__init__(self,parent)
         self.h = h
 
     def name(self):
@@ -36,8 +37,9 @@ class SpreadSheetQuickSheet97(object):
 
         
 
-class SpreadSheetQuickSheet07(object):
-    def __init__(self,h):
+class SpreadSheetQuickSheet07(QObject):
+    def __init__(self,h,parent = None):
+        QObject.__init__(self,parent)
         self.h = h
 
     def name(self):
@@ -75,8 +77,9 @@ class SpreadSheetQuickSheet07(object):
             self.h.cell(row = int(index[0]) + 1,column = int(index[1]) + 1).value = v     
         #print "Sheet %s , %d changes" % (self.name() , len(diff.keys()))
     
-class SpreadSheetQuickSheet(object):
-    def __init__(self,h = None):
+class SpreadSheetQuickSheet(QObject):
+    def __init__(self,h = None,parent=None):
+        QObject.__init__(self,parent)
         self.h = h
 
     def name(self):
@@ -97,8 +100,9 @@ class SpreadSheetQuickSheet(object):
     def cell_value(self,xrow,xcol):
         return ''
     
-class SpreadSheetQuick(object):
-    def __init__(self,fname):
+class SpreadSheetQuick(QObject):
+    def __init__(self,fname,parent = None):
+        QObject.__init__(self,parent)
         self.fname = fname
         if re.match(r'.*\.xlsx$',self.fname.lower()):
             self.fmt = '2007'
@@ -117,9 +121,9 @@ class SpreadSheetQuick(object):
     
     def worksheet(self,name):
         if self.fmt == '2007':
-            return SpreadSheetQuickSheet07(self.workbook.get_sheet_by_name(name))
+            return SpreadSheetQuickSheet07(self.workbook.get_sheet_by_name(name),self)
         elif self.fmt == '1997':
-            return SpreadSheetQuickSheet97(self.workbook.sheet_by_name(name))
+            return SpreadSheetQuickSheet97(self.workbook.sheet_by_name(name),self)
         
     def save_to_file(self,filename):
         if self.fmt == '2007':

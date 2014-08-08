@@ -11,13 +11,6 @@ import XLSProc
 import ui_utils
 
 
-#tableHeaders = [ XLSProc.XlsHeader(i) for i in range(0, sheet.col_count())]
-#w.setHorizontalHeaderLabels(tableHeaders)
-
-
-     #   except:
-      #      print "Error in %d %d" % (row,col)
-
 class SpreadSheetModel(QAbstractTableModel):
     defaultRowCount = 50
     defaultColCount = 24
@@ -114,7 +107,7 @@ class MainUI(QXSingleDocMainWindow):
         
         for x in range(3):
             w = QTableView()
-            m = SpreadSheetModel(XLSProc.SpreadSheetQuickSheet())
+            m = SpreadSheetModel(XLSProc.SpreadSheetQuickSheet(),self)
             w.setModel(m)
             self.mainWidget.addTab(w,"Sheet%d" % (x + 1))
             
@@ -128,7 +121,7 @@ class MainUI(QXSingleDocMainWindow):
     def onFileLoad(self):
         fname = str(self.fileName())
         
-        self.workbook = XLSProc.SpreadSheetQuick(fname)
+        self.workbook = XLSProc.SpreadSheetQuick(fname,self)
         
         if self.workbook.fmt == '':
             self.loadFinished(False)
@@ -145,7 +138,7 @@ class MainUI(QXSingleDocMainWindow):
         for sheet_name in self.workbook.worksheets():
             w = QTableView()
             sheet = self.workbook.worksheet(sheet_name)
-            m = SpreadSheetModel(sheet)
+            m = SpreadSheetModel(sheet,self)
             w.setModel(m)        
             self.mainWidget.addTab(w,sheet_name)
 
