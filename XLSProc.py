@@ -30,7 +30,7 @@ class SpreadSheetQuickSheet97(object):
     def cell_value(self,row,col):
         return self.h.cell_value(row,col)
     
-    def sync(self,old_xworksheet,new_xworksheet):
+    def sync(self,diff):
         pass
     
 
@@ -67,6 +67,13 @@ class SpreadSheetQuickSheet07(object):
         except:
             s = cell.value
         return s
+    
+    def sync(self,diff):
+        for d in diff.keys():
+            v = diff[d]
+            index = str(d).split(',')
+            self.h.cell(row = int(index[0]) + 1,column = int(index[1]) + 1).value = v     
+        #print "Sheet %s , %d changes" % (self.name() , len(diff.keys()))
     
 class SpreadSheetQuickSheet(object):
     def __init__(self,h = None):
@@ -112,7 +119,14 @@ class SpreadSheetQuick(object):
         if self.fmt == '2007':
             return SpreadSheetQuickSheet07(self.workbook.get_sheet_by_name(name))
         elif self.fmt == '1997':
-            return SpreadSheetQuickSheet97(self.workbook.sheet_by_name(name))       
+            return SpreadSheetQuickSheet97(self.workbook.sheet_by_name(name))
+        
+    def save_to_file(self,filename):
+        if self.fmt == '2007':
+            return self.workbook.save(filename)
+        elif self.fmt == '1997':
+            return False
+        return False
 
     @staticmethod
     def create(xworkbook,filename):
@@ -130,13 +144,39 @@ class SpreadSheetQuick(object):
             except:
                 return False
             
+        elif re.match(r'.*\.xlsx$',filename.lower()):
+            workbook = openpyxl.Workbook()
+            for i,xworksheet in enumerate(xworkbook):
+                if i == 0:
+                    sheet = workbook.active
+                else:
+                    sheet = workbook.create_sheet()
+                sheet.title = xworksheet['name']
+                for d in xworksheet['data'].keys():
+                    v = xworksheet['data'][d]
+                    index = str(d).split(',')
+                    sheet.cell(row = int(index[0]) + 1,column = int(index[1]) + 1).value = v
+            try:
+                workbook.save(filename)
+                return True
+            except:
+                return False            
         return False
     
     @staticmethod
-    def save(xworkbook,filename):
+    def save(xworkbook,workbook,filename):
         if re.match(r'.*\.xls$',filename.lower()):
             return SpreadSheetQuick.create(xworkbook,filename)
-            
+        elif re.match(r'.*\.xlsx$',filename.lower()):
+            for xworksheet in xworkbook:
+                #print "Sync %s" % xworksheet['name']
+                sheet = workbook.worksheet(xworksheet['name'])
+                sheet.sync(xworksheet['diff'])
+            try:
+                workbook.save_to_file(filename)
+                return True
+            except:
+                return False                 
         return False    
 
 def XlsHeader(i):

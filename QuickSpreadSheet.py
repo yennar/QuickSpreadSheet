@@ -2,6 +2,7 @@
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
+from ui_utils import *
 
 import sys
 import re
@@ -22,7 +23,8 @@ class SpreadSheetModel(QAbstractTableModel):
     defaultColCount = 24
     
     def __init__(self,sheet,parent=None):
-        super(QAbstractTableModel, self).__init__(parent)
+        QAbstractTableModel.__init__(self,parent)
+        
         self.sheet = sheet
         self.row_count = max(self.defaultRowCount,sheet.row_count())
         self.col_count = max(self.defaultColCount,sheet.col_count())
@@ -46,7 +48,7 @@ class SpreadSheetModel(QAbstractTableModel):
             if orientation == Qt.Horizontal:
                 return XLSProc.XlsHeader(section)
             else:
-                return "%d" % section
+                return "%d" % (section + 1)
         return QVariant()
             
     def data(self,index,role = Qt.DisplayRole):
@@ -96,18 +98,15 @@ class SpreadSheetModel(QAbstractTableModel):
                 
         
 
-class MainUI(ui_utils.QXSingleDocMainWindow):
+class MainUI(QXSingleDocMainWindow):
 
-
-    
     def __init__(self,parent=None):
-        super(ui_utils.QXSingleDocMainWindow, self).__init__(parent)
+        QXSingleDocMainWindow.__init__(self,parent)
         self.initUI()
-        self.initDefaultUI()
-
+       
     def initUI(self):
 
-        self.setFileSaveAsSuffix("Excel WorkBook (*.xlsx);;Excel 1997 - 2003 WorkBook (*.txt);;Tab Seperated Value (*.tsv);;Comma Seperated Value (*.csv)")
+        self.setFileSaveAsSuffix("All Support (*.xlsx *.xls *.tsv *.csv);;Excel WorkBook (*.xlsx);;Excel 1997 - 2003 WorkBook (*.txt);;Tab Seperated Value (*.tsv);;Comma Seperated Value (*.csv)")
         
         self.mainWidget = QTabWidget()
         self.mainWidget.setTabPosition(QTabWidget.South)
@@ -177,8 +176,9 @@ class MainUI(ui_utils.QXSingleDocMainWindow):
     def onFileSave(self, fileName):
         self.activeTab = self.mainWidget.currentIndex()
                    
-        if XLSProc.SpreadSheetQuick.save(self.getXWorkBook(), str(fileName)):
+        if XLSProc.SpreadSheetQuick.save(self.getXWorkBook(),self.workbook,str(fileName)):
             self.modelSync()
+            self.updateStatusBarMessage("Saved %s at %s" % (self.fileName() , QDateTime.currentDateTime().toString()))
             return True            
     
         
@@ -188,5 +188,5 @@ if __name__ == '__main__':
     fname = sys.argv[1]
     w = MainUI()
     w.show()
-    #w.ActionFileLoad(fname)
+    w.ActionFileLoad(fname)
     exit(app.exec_())

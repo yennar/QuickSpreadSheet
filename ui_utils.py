@@ -58,6 +58,7 @@ class QXSingleDocMainWindow(QMainWindow):
     
     def __init__(self,parent=None):
         super(QMainWindow, self).__init__(parent)
+        self.initDefaultUI()
         
         
 
