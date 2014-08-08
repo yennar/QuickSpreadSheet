@@ -30,16 +30,10 @@ class SpreadSheetQuickSheet97(object):
     def cell_value(self,row,col):
         return self.h.cell_value(row,col)
     
-    @staticmethod
-    def create(xworkbook,filename):
-        workbook = xlwt.Workbook()
-        for xworksheet in xworkbook:
-            sheet = workbook.add_sheet(xworksheet['name'])
-            for d in xworksheet['data'].keys():
-                v = xworksheet['data'][d]
-                index = d.split(sep=',')
-                sheet.write(index[0],index[1],v)
-        return workbook.save(filename)
+    def sync(self,old_xworksheet,new_xworksheet):
+        pass
+    
+
         
 
 class SpreadSheetQuickSheet07(object):
@@ -105,6 +99,8 @@ class SpreadSheetQuick(object):
         elif re.match(r'.*\.xls$',self.fname.lower()):
             self.fmt = '1997'
             self.workbook = xlrd.open_workbook(fname)
+        else:
+            self.fmt = ''
             
     def worksheets(self):
         if self.fmt == '2007':
@@ -118,13 +114,34 @@ class SpreadSheetQuick(object):
         elif self.fmt == '1997':
             return SpreadSheetQuickSheet97(self.workbook.sheet_by_name(name))       
 
+    @staticmethod
+    def create(xworkbook,filename):
+        if re.match(r'.*\.xls$',filename.lower()):
+            workbook = xlwt.Workbook()
+            for xworksheet in xworkbook:
+                sheet = workbook.add_sheet(xworksheet['name'])
+                for d in xworksheet['data'].keys():
+                    v = xworksheet['data'][d]
+                    index = str(d).split(',')
+                    sheet.write(int(index[0]),int(index[1]),v)
+            try:
+                workbook.save(filename)
+                return True
+            except:
+                return False
+            
+        return False
+    
+    @staticmethod
+    def save(xworkbook,filename):
+        if re.match(r'.*\.xls$',filename.lower()):
+            return SpreadSheetQuick.create(xworkbook,filename)
+            
+        return False    
+
 def XlsHeader(i):
     if i >= 0 and i <= 25:
         return chr(ord('A') + i)
     else:
         t = int(i / 26)
         return chr(ord('A') + t - 1) + chr(ord('A') + i - t * 26)
-    
-def createWorkBook(xworkbook,filename):
-    if re.match(r'.*\.xls$',filename.lower()):
-        SpreadSheetQuickSheet97.create(xworkbook,filename)

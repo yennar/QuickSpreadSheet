@@ -32,8 +32,8 @@ class SpreadSheetModel(QAbstractTableModel):
         for row in range(0, sheet.row_count()):
             for col in range(0, sheet.col_count()):
                 key="%d,%d" % (row,col)
-                self._data[key] = sheet.cell_value(row,col)
-                self._init_data[key] = sheet.cell_value(row,col)
+                self._data[key] = str(sheet.cell_value(row,col))
+                self._init_data[key] = str(sheet.cell_value(row,col))
                 
     def rowCount(self,parent = None):
         return self.row_count
@@ -66,7 +66,7 @@ class SpreadSheetModel(QAbstractTableModel):
     def setData(self,index,value,role = Qt.DisplayRole):
         if role == Qt.DisplayRole or role == Qt.EditRole:
             key="%d,%d" % (index.row(),index.column())
-            self._data[key] = value
+            self._data[key] = str(value.toString())
             if not self._init_data.has_key(key):
                 self._init_data[key] = ''
             self.dataChanged.emit(index,index)
@@ -78,6 +78,22 @@ class SpreadSheetModel(QAbstractTableModel):
     
     def dump(self):
         return self._data
+    
+    def diff(self):
+        rtn = {}
+        for key in self._data:
+            val = re.sub(r'^\s+','',self._data[key])
+            val = re.sub(r'\s+$','',val)
+            
+            val_init = re.sub(r'^\s+','',self._init_data[key])
+            val_init = re.sub(r'\s+$','',val_init)
+            if val != val_init:
+                rtn[key] = val
+        return rtn
+    
+    def sync(self):
+        self._init_data = self._data
+                
         
 
 class MainUI(ui_utils.QXSingleDocMainWindow):
@@ -90,6 +106,9 @@ class MainUI(ui_utils.QXSingleDocMainWindow):
         self.initDefaultUI()
 
     def initUI(self):
+
+        self.setFileSaveAsSuffix("Excel WorkBook (*.xlsx);;Excel 1997 - 2003 WorkBook (*.txt);;Tab Seperated Value (*.tsv);;Comma Seperated Value (*.csv)")
+        
         self.mainWidget = QTabWidget()
         self.mainWidget.setTabPosition(QTabWidget.South)
         self.setCentralWidget(self.mainWidget)
@@ -107,29 +126,60 @@ class MainUI(ui_utils.QXSingleDocMainWindow):
         def slotOnTableCellChange(self,xrow,xcol):
             sheet.set_cell_value()
             
-    def onFileOpen(self):
-        fname = self.fileName()
+    def onFileLoad(self):
+        fname = str(self.fileName())
         self.mainWidget.clear()
         self.workbook = XLSProc.SpreadSheetQuick(fname)
         
+        if self.workbook.fmt == '':
+            self.loadFinished(False)
+            
+        if re.match(r'.*\.xls$',fname.lower()) and not self.fileCreateByMe():
+            self.setFileReadOnly(True)
+        else:
+            self.setFileReadOnly(False)
+            
         for sheet_name in self.workbook.worksheets():
             w = QTableView()
             sheet = self.workbook.worksheet(sheet_name)
             m = SpreadSheetModel(sheet)
             w.setModel(m)        
             self.mainWidget.addTab(w,sheet_name)
+
+        if self.fileCreateByMe():
+            self.mainWidget.setCurrentIndex(self.activeTab)
+            
         self.updateStatusBarMessage('Ready')
-        self.loadFinished()
-        
-    def onFileSaveAs(self, fileName):
+        self.loadFinished(True)
+
+    def getXWorkBook(self):
         xworkbook = []
         for i in range(self.mainWidget.count()):
             w = self.mainWidget.widget(i)
             xworkbook.append({
-                'name' : self.mainWidget.tabText(i),
-                'data' : w.model().dump()
+                'name' : str(self.mainWidget.tabText(i)),
+                'data' : w.model().dump(),
+                'diff' : w.model().diff()
             })
-        XLSProc.createWorkBook(xworkbook, fileName)
+        return xworkbook
+    
+    def modelSync(self):
+        for i in range(self.mainWidget.count()):
+            w = self.mainWidget.widget(i)
+            w.model().sync()
+        
+    def onFileSaveAs(self, fileName):
+        self.activeTab = self.mainWidget.currentIndex()
+        if XLSProc.SpreadSheetQuick.create(self.getXWorkBook(), str(fileName)):
+            self.modelSync()
+            return True
+    
+    def onFileSave(self, fileName):
+        self.activeTab = self.mainWidget.currentIndex()
+                   
+        if XLSProc.SpreadSheetQuick.save(self.getXWorkBook(), str(fileName)):
+            self.modelSync()
+            return True            
     
         
 if __name__ == '__main__':
@@ -138,5 +188,5 @@ if __name__ == '__main__':
     fname = sys.argv[1]
     w = MainUI()
     w.show()
-    w.ActionFileOpen(fname)
+    #w.ActionFileLoad(fname)
     exit(app.exec_())

@@ -5,6 +5,7 @@ from PyQt4.QtGui import *
 
 import sys
 import re
+import ui_utils_res
 
 class QXInputDialog(QInputDialog):
     
@@ -75,18 +76,35 @@ class QXSingleDocMainWindow(QMainWindow):
         self.setFileSaveAsSuffix("All Files (*.*)")
         self.setFileReadOnly(False)
         self._fileName = None
-        
+        self.setFileCreateByMe(False)
+
+        self.actionFileNew = QAction(QIcon(":new.png"),'New',self,triggered=self.ActionFileNew)
+        self.actionFileOpen = QAction(QIcon(":open.png"),'Open',self,triggered=self.ActionFileOpen)
+        self.actionFileSave = QAction(QIcon(":save.png"),'Save',self,triggered=self.ActionFileSave)
+        self.actionFileSaveAs = QAction('SaveAs',self,triggered=self.ActionFileSaveAs)        
+
         #toolbar
         
         if hasToolBar:
             self.tbrMain = self.addToolBar("Main")
             
-        
+            self.tbrMain.addAction(self.actionFileNew)
+            self.tbrMain.addAction(self.actionFileOpen)
+            self.tbrMain.addAction(self.actionFileSave)
+
+            
+            
         self.setUnifiedTitleAndToolBarOnMac(True)
         
         
-    def setFileSaveAsSuffix(s):
+    def setFileSaveAsSuffix(self,s):
         self._fileSaveAsSuffix = s
+        
+    def setFileCreateByMe(self,t):
+        self._fileCreateByMe = t
+        
+    def fileCreateByMe(self):
+        return self._fileCreateByMe
         
     def setFileName(self,f):
         self._fileName = f;
@@ -94,38 +112,60 @@ class QXSingleDocMainWindow(QMainWindow):
     def setFileReadOnly(self,t):
         self._fileReadOnly = t
         
-    def loadFinished(self):
-        if self._fileReadOnly:
+    def loadFinished(self,success = False):
+        
+        if not success:
+            self.setFileName(None)
+            self.setWindowTitle("Untitled[*] - %s" % self.appName)
+            return
+        
+        if not self._fileReadOnly:
             self.setWindowTitle("%s[*] - %s" % (self._fileName,self.appName))
         else:
             self.setWindowTitle("%s (Read Only) - %s" % (self._fileName,self.appName))
             
     def fileName(self):
         return self._fileName
+
+    def ActionFileNew(self):
+        pass
+
+    def ActionFileOpen(self):
+        fileName = QFileDialog.getOpenFileName(self,"Open",QDir.currentPath(),self._fileSaveAsSuffix)
+        if not fileName is None and fileName != '':
+            self.setFileCreateByMe(False)
+            self.ActionFileLoad(fileName)
     
-    def ActionFileOpen(self,f):
+    def ActionFileLoad(self,f):
         self.updateStatusBarMessage("Loading %s" % f)
         self.setFileName(f)
         self.t = QTimer()
         self.t.setSingleShot(True)
-        self.t.timeout.connect(self.onFileOpen)
+        self.t.timeout.connect(self.onFileLoad)
         self.t.start(100)
 
     def ActionFileSave(self):
-        if self._fileName is None:
+        if self._fileName is None or self._fileReadOnly:
+            self.setFileCreateByMe(True)
             self.ActionFileSaveAs()
+        else:
+            self.onFileSave(self.fileName())
+                
             
     def ActionFileSaveAs(self):
         fileName = QFileDialog.getSaveFileName(self,"Save As",QDir.currentPath(),self._fileSaveAsSuffix)
-        if not fileName is None:
-            self.onFileSaveAs(fileName)
+        if not fileName is None and fileName != '':
+            if self.onFileSaveAs(fileName):            
+                self.ActionFileLoad(fileName)
 
-    def onFileOpen(self):
+    def onFileLoad(self):
         pass
 
     def onFileSaveAs(self,fileName):
-        pass
+        return False
     
+    def onFileSave(self,fileName):
+        pass
     
     def updateStatusBarMessage(self,s):
         self.statusBar().showMessage(s)
