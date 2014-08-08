@@ -127,11 +127,15 @@ class MainUI(QXSingleDocMainWindow):
             
     def onFileLoad(self):
         fname = str(self.fileName())
-        self.mainWidget.clear()
+        
         self.workbook = XLSProc.SpreadSheetQuick(fname)
         
         if self.workbook.fmt == '':
             self.loadFinished(False)
+            self.updateStatusBarMessage("Error: Cannot open %s" % fname)
+            return
+        
+        self.mainWidget.clear()
             
         if re.match(r'.*\.xls$',fname.lower()) and not self.fileCreateByMe():
             self.setFileReadOnly(True)
