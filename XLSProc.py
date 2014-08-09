@@ -183,9 +183,14 @@ class SpreadSheetQuick(QObject):
                 return False                 
         return False    
 
-def XlsHeader(i):
+def XlsHeader(i,j=None):
+    RowStr = ''
     if i >= 0 and i <= 25:
-        return chr(ord('A') + i)
+        RowStr = chr(ord('A') + i)
     else:
         t = int(i / 26)
-        return chr(ord('A') + t - 1) + chr(ord('A') + i - t * 26)
+        RowStr = chr(ord('A') + t - 1) + chr(ord('A') + i - t * 26)
+    if j is None:
+        return RowStr
+    else:
+        return "%s%d" % (RowStr,(j+1))

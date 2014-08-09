@@ -54,6 +54,33 @@ class QXInputDialog(QInputDialog):
         else:
             return None          
 
+class QXAction(QAction):
+
+   
+    def __init__(self,*kargs,**kwargs):
+        QAction.__init__(self,*kargs,**kwargs)
+        kq = QKeySequence.mnemonic(self.text())
+        if kq.isEmpty():
+            if self.text().contains('&'):
+                t = self.text().replace('&','')
+                try:
+                    kq = QKeySequence(eval('QKeySequence.%s' % t))
+                except:
+                    pass
+        self.setShortcut(kq)
+        
+        if not kq.isEmpty():
+            self.setToolTip("%s (%s)" % (self.text().replace('&',''),kq.toString(QKeySequence.NativeText)))
+        
+        image_name = "%s.png" % self.text().replace('&','').toLower()
+        dir = QDir(QDir.currentPath());
+        if dir.exists(image_name):
+            self.setIcon(QIcon(image_name))
+        else:
+            image_name = ":" + image_name
+            if dir.exists(image_name):
+                self.setIcon(QIcon(image_name))            
+        
 class QXSingleDocMainWindow(QMainWindow):
     
     def __init__(self,parent=None):
@@ -84,10 +111,10 @@ class QXSingleDocMainWindow(QMainWindow):
         self._fileName = None
         self.setFileCreateByMe(False)
 
-        self.actionFileNew = QAction(QIcon(":new.png"),'New',self,triggered=self.ActionFileNew)
-        self.actionFileOpen = QAction(QIcon(":open.png"),'Open',self,triggered=self.ActionFileOpen)
-        self.actionFileSave = QAction(QIcon(":save.png"),'Save',self,triggered=self.ActionFileSave)
-        self.actionFileSaveAs = QAction('SaveAs',self,triggered=self.ActionFileSaveAs)        
+        self.actionFileNew = QXAction('&New',self,triggered=self.ActionFileNew)
+        self.actionFileOpen = QXAction('&Open',self,triggered=self.ActionFileOpen)
+        self.actionFileSave = QXAction('&Save',self,triggered=self.ActionFileSave)
+        self.actionFileSaveAs = QXAction('Save &As',self,triggered=self.ActionFileSaveAs)        
 
         #toolbar
         
@@ -100,8 +127,7 @@ class QXSingleDocMainWindow(QMainWindow):
 
             
             
-        self.setUnifiedTitleAndToolBarOnMac(True)
-        
+        self.setUnifiedTitleAndToolBarOnMac(True)        
         
     def setFileSaveAsSuffix(self,s):
         self._fileSaveAsSuffix = s
@@ -190,11 +216,28 @@ class QXSingleDocMainWindow(QMainWindow):
     def updateStatusBarMessage(self,s):
         self.statusBar().showMessage(s)
     
-
-
+    def closeEvent(self,e):
+        if (self.isWindowModified()):
+            msgBox = QMessageBox(self)
+            msgBox.setIcon(QMessageBox.Question)
+            msgBox.setText("The document %s has been modified." % self.fileName())
+            msgBox.setInformativeText("Do you want to save your changes?")
+            msgBox.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msgBox.setDefaultButton(QMessageBox.Save)
+            ret = msgBox.exec_()
+            
+            if ret == QMessageBox.Cancel:
+                e.ignore()
+                return
+            
+            if ret == QMessageBox.Save:
+                self.ActionFileSave()
+                e.accept()
+                return            
+        e.accept()
+        return                  
+            
+            
 if __name__ == '__main__':
-    import sys
-    app = QApplication(sys.argv)
-    x = QXInputDialog.getMulti(None,"multi","Enter Survey",["Name","Gender","Opt*"])
-    print x 
+    print dir(QKeySequence)
                 
