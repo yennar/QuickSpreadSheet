@@ -4,6 +4,7 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from ui_utils import *
 
+
 import sys
 import re
 
@@ -182,8 +183,11 @@ class MainUI(QXSingleDocMainWindow):
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
-    fname = sys.argv[1]
     w = MainUI()
     w.show()
-    w.ActionFileLoad(fname)
-    exit(app.exec_())
+    try:
+        fname = sys.argv[1]
+        w.ActionFileLoad(fname)
+    except:
+        pass
+    app.exec_()

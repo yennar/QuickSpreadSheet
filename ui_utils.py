@@ -2,7 +2,7 @@
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-
+import platform
 import sys
 import re
 import ui_utils_res
@@ -68,7 +68,12 @@ class QXSingleDocMainWindow(QMainWindow):
         w = screenWidget.size().height()
         h = screenWidget.size().height() * 0.6
         self.resize(w,h)
-        self.move(QPoint((screenWidget.size().width() - w) / 2 , (screenWidget.size().height() - h) / 2 ))
+        import random,os
+        random.seed(os.urandom(128))
+        self.move(QPoint(
+            random.randint(0,(screenWidget.size().width()  - w) / 2) ,
+            random.randint(0,(screenWidget.size().height() - h) / 2))
+            )
         
         self.appName = re.sub(r'^.*\/','',sys.argv[0])
         self.appName = re.sub(r'\..*$','',self.appName)
@@ -127,9 +132,23 @@ class QXSingleDocMainWindow(QMainWindow):
             
     def fileName(self):
         return self._fileName
-
+    
+    def getAppExecutable(self):
+        appExec = QCoreApplication.applicationFilePath()
+        appFile = sys.argv[0]
+        #print platform.system(),appExec,appFile
+        if platform.system() == 'Darwin':
+            appExecDir = QDir(appExec)
+            if appExecDir.dirName().toLower() == 'python':
+                # The script is executed by python
+                return "\"%s\" \"%s\"" % (appExec,appFile)
+            else:
+                return "\"%s\"" %appExec
+        
+        
     def ActionFileNew(self):
-        pass
+        execStr = self.getAppExecutable()
+        QProcess.startDetached(execStr)
 
     def ActionFileOpen(self):
         fileName = QFileDialog.getOpenFileName(self,"Open",QDir.currentPath(),self._fileSaveAsSuffix)
