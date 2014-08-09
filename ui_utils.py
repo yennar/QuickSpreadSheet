@@ -71,8 +71,8 @@ class QXSingleDocMainWindow(QMainWindow):
         import random,os
         random.seed(os.urandom(128))
         self.move(QPoint(
-            random.randint(0,(screenWidget.size().width()  - w) / 2) ,
-            random.randint(0,(screenWidget.size().height() - h) / 2))
+            random.randint(0,int((screenWidget.size().width()  - w) / 2)) ,
+            random.randint(0,int((screenWidget.size().height() - h) / 2)))
             )
         
         self.appName = re.sub(r'^.*\/','',sys.argv[0])
