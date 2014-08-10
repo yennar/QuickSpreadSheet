@@ -284,6 +284,7 @@ class QXSingleDocMainWindow(QMainWindow):
         self.actionFileOpen = QXAction('&Open',self,triggered=self.ActionFileOpen)
         self.actionFileSave = QXAction('&Save',self,triggered=self.ActionFileSave)
         self.actionFileSaveAs = QXAction('Save &As',self,triggered=self.ActionFileSaveAs)
+        self.actionQuit = QXAction('Quit',self,triggered=self.close)
         
         self.actionEditUndo = QXAction('&Undo',self,triggered=self.onEditUndo)
         self.actionEditRedo = QXAction('&Redo',self,triggered=self.onEditRedo)
@@ -319,6 +320,8 @@ class QXSingleDocMainWindow(QMainWindow):
             mnuFile.addAction(self.actionFileOpen)
             mnuFile.addAction(self.actionFileSave)
             mnuFile.addAction(self.actionFileSaveAs)
+            mnuFile.addSeparator()
+            mnuFile.addAction(self.actionQuit)
             
             mnuEdit = self.mnuMain.addMenu('&Edit')
             mnuEdit.addAction(self.actionEditUndo)
