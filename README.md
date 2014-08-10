@@ -6,7 +6,7 @@ Very small and fast application for viewing and editing Microsoft Excel (2000,XP
  Install 
 ---------
 
-* OSX
+### OSX
 1. Install PyQt4 for Python 2.7 from http://www.riverbankcomputing.co.uk/software/pyqt/download
 2. Install xlrd,xlwt and openpyxl:
 
@@ -18,11 +18,11 @@ Very small and fast application for viewing and editing Microsoft Excel (2000,XP
 
     ./QuickSpreadSheet.py
         
-* Windows (Binary)
+### Windows (Binary)
 
 Enjoy /build_win32/dist/QuickSpreadSheet.exe
 
-* Windows (Source)
+### Windows (Source)
 
 1. Install Python 2.7 from https://www.python.org/download/
 2. Install PyQt4 for Python 2.7 from http://www.riverbankcomputing.co.uk/software/pyqt/download
@@ -37,7 +37,7 @@ Enjoy /build_win32/dist/QuickSpreadSheet.exe
 
     python QuickSpreadSheet.py
         
-* Linux (Debian/Ubuntu)
+### Linux (Debian/Ubuntu)
 1. Install PyQt4 for Python 2.7
     
     sudo apt-get install python-qt4
