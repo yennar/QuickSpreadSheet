@@ -18,7 +18,7 @@ py2exe_options = {
 setup(
       name = 'QuickSpreadSheet',
       version = '1.0',
-      console = [{
+      windows = [{
             'script' : 'QuickSpreadSheet.py'
              }
            ],     
