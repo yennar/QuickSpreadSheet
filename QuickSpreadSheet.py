@@ -284,7 +284,7 @@ class MainUI(QXSingleDocMainWindow):
             
     def onFileLoad(self,isNew = False):
 
-        self.setCursor(Qt.BusyCursor)
+        
 
         if not isNew:        
             fname = str(self.fileName())
@@ -299,7 +299,7 @@ class MainUI(QXSingleDocMainWindow):
             self.workbook = XLSProc.SpreadSheetQuick(None,self)
             fname = ''
             xprint('new')
-        
+        self.setCursor(Qt.BusyCursor)
         self.tabFrame.clear()
         self.logManagers = []
             
