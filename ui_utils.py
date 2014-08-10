@@ -270,7 +270,7 @@ class QXSingleDocMainWindow(QMainWindow):
             random.randint(0,int((screenWidget.size().height() - h) / 2)))
             )
         
-        self.appName = re.sub(r'^.*\/','',sys.argv[0])
+        self.appName = re.sub(r'^.*[\/\\]','',sys.argv[0])
         self.appName = re.sub(r'\..*$','',self.appName)
         
         self.setWindowTitle("Untitled[*] - %s" % self.appName)   

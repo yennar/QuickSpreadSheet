@@ -4,7 +4,6 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from ui_utils import *
 
-
 import sys
 import re
 
