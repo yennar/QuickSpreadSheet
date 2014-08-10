@@ -11,7 +11,7 @@ import re
 import XLSProc
 import ui_utils
 
-_print_enabled = True
+_print_enabled = False
 
 def xprint(s):
     if _print_enabled:
@@ -176,6 +176,9 @@ class CellEditor(QWidget):
 
 
 class LogManager(QObject):
+
+    canUndoRedo = pyqtSignal(bool,bool)
+    
     def __init__(self,name,model,parent= None):
         QObject.__init__(self,parent)
         self.name = name
@@ -187,39 +190,62 @@ class LogManager(QObject):
         
         self.localStack = {}
         self.localStackCurPtr = -1
-        self.localStackEndPtr = -1
+        self.localStackEndPtr = -2
+        self.logEnabled = True
 
     def onDataChange(self,key,prevalue,value):
+        if not self.logEnabled:
+            return
+        
+        if prevalue == value:
+            return
+        
         if not key == self.lastKey:
             self.flush()
             self.lastKey = key
             self.lastPreValue = prevalue
             
-        self.lastValue = value        
+        self.lastValue = value    
+
+    def onDataChangeMulti(self,mineData):
+        self.flush()
+        self.localStackCurPtr += 1
+        self.localStack[self.localStackCurPtr] = mineData
+        self.localStackEndPtr = self.localStackCurPtr
+        
+        for item in mineData:
+            xprint("set_cell_value '%s' '%s' # block %s" % (item['key'],item['curv'],item['prev']))
+        self.notify()
+        
+    def setLogEnabled(self,b):
+        self.logEnabled = b
+        
     def flush(self,*kargs):
         if self.lastKey == '':
             return
         
-        xprint("set_cell_value '%s' %s # %s" % (self.lastKey,self.lastValue,self.lastPreValue))
+        xprint("set_cell_value '%s' '%s' # %s" % (self.lastKey,self.lastValue,self.lastPreValue))
         
         self.localStackCurPtr += 1
-        self.localStack[self.localStackCurPtr] = {
+        self.localStack[self.localStackCurPtr] = [{
             'dataSource' : self.dataSource,
             'key' : self.lastKey,
             'prev' : self.lastPreValue,
             'curv' : self.lastValue
-        }
+        }]
         self.localStackEndPtr = self.localStackCurPtr
                 
         self.lastKey = ''
-
+        self.notify()
     def undo(self):
         self.flush()
         if self.canUndo():           
-            item = self.localStack[self.localStackCurPtr]
-            xprint("set_cell_value '%s' %s # undo %d" % (item['key'],item['prev'],self.localStackCurPtr))
-            item['dataSource'].setValue(item['key'],item['prev'],True)
+            items = self.localStack[self.localStackCurPtr]
+            for item in items:
+                xprint("set_cell_value '%s' '%s' # undo %d" % (item['key'],item['prev'],self.localStackCurPtr))
+                item['dataSource'].setValue(item['key'],item['prev'],True)
             self.localStackCurPtr -= 1
+        self.notify()
         
     def canUndo(self):
         return self.localStackCurPtr >= 0
@@ -228,13 +254,16 @@ class LogManager(QObject):
         self.flush()
         if self.canRedo():
             self.localStackCurPtr += 1
-            item = self.localStack[self.localStackCurPtr]
-            xprint("set_cell_value '%s' %s # redo %d" % (item['key'],item['curv'],self.localStackCurPtr))
+            items = self.localStack[self.localStackCurPtr]
+            for item in items:
+                xprint("set_cell_value '%s' '%s' # redo %d" % (item['key'],item['curv'],self.localStackCurPtr))
             item['dataSource'].setValue(item['key'],item['curv'],True)
-                        
-
+        self.notify()                
     def canRedo(self):
-        return self.localStackCurPtr < self.localStackEndPtr        
+        return self.localStackCurPtr < self.localStackEndPtr and self.localStackEndPtr != -2
+    
+    def notify(self):
+        self.canUndoRedo.emit(self.canUndo(),self.canRedo())
             
 
 class MainUI(QXSingleDocMainWindow):
@@ -269,14 +298,18 @@ class MainUI(QXSingleDocMainWindow):
         self.mainWidget.setLayout(layMain)
         self.setCentralWidget(self.mainWidget)
         
+        self.logManagers = [] 
+        
         self.onFileLoad(True)
         
-        self.logManagers = []       
+              
         self.updateStatusBarMessage('Ready')
     
     def onCurrentTabChanged(self,sheetid):
         xprint("sheet_active %d # %s" % (sheetid,self.tabFrame.tabText(sheetid)))
         self.cellEditor.onSheetIdChange(sheetid)
+        if sheetid >=0 and sheetid < len(self.logManagers):
+            self.setEditUndoRedoStatus(self.logManagers[sheetid].canUndo(), self.logManagers[sheetid].canRedo())
             
     def createSlotOnTableCellChange(self,sheet):
         def slotOnTableCellChange(self,xrow,xcol):
@@ -309,7 +342,7 @@ class MainUI(QXSingleDocMainWindow):
             self.setFileReadOnly(False)
             
         for sheet_id,sheet_name in enumerate(self.workbook.worksheets()):
-            w = QTableView()
+            w = QXTableView()
             sheet = self.workbook.worksheet(sheet_name)
             m = SpreadSheetModel(sheet,self)
             w.setModel(m)
@@ -319,8 +352,13 @@ class MainUI(QXSingleDocMainWindow):
             
             l = LogManager(sheet_name,m,self)
             self.logManagers.append(l)
+            l.canUndoRedo.connect(self.setEditUndoRedoStatus)
             w.selectionModel().currentChanged.connect(l.flush)
+            w.beginRemove.connect(l.setLogEnabled)
+            w.endRemove.connect(l.setLogEnabled)
+            w.dataChangeMulti.connect(l.onDataChangeMulti)
             self.tabFrame.currentChanged.connect(l.flush)
+            
 
         if not self.fileCreateByMe():
             self.activeTab = 0
@@ -387,7 +425,12 @@ class MainUI(QXSingleDocMainWindow):
         self.logManagers[self.tabFrame.currentIndex()].undo()
     def onEditRedo(self):
         self.logManagers[self.tabFrame.currentIndex()].redo()
-    
+    def onEditCut(self):
+        self.tabFrame.currentWidget().cutSelection()
+    def onEditCopy(self):
+        self.tabFrame.currentWidget().copySelection()
+    def onEditPaste(self):
+        self.tabFrame.currentWidget().pasteSelection()        
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
