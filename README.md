@@ -8,9 +8,9 @@ QuickSpreadSheet
     + Windows 2000 and higher
     + Linux (x86 and ARM)
     
-![snapshot](https://raw.githubusercontent.com/yennar/QuickSpreadSheet/master/snapshot.png)
+![snapshot](https://raw.githubusercontent.com/yennar/QuickSpreadSheet/master/web/snapshot_osx.png)
 
-
+![snapshot](https://raw.githubusercontent.com/yennar/QuickSpreadSheet/master/web/snapshot_win32.png)
 
 
  Install 
