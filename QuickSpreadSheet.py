@@ -433,11 +433,20 @@ class MainUI(QXSingleDocMainWindow):
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
+    import argparse
+    argparser = argparse.ArgumentParser(prog='QuickSpreadSheet',prefix_chars='-+')
+    
+    argparser.add_argument('-record',action='store_true',help="print record log")
+    argparser.add_argument('filename', nargs='?', help='supported spreadsheet')
+    args = argparser.parse_args()    
+
+    if args.record:
+        _print_enabled = True
+    
     w = MainUI()
     w.show()
-    try:
-        fname = sys.argv[1]
-        w.ActionFileLoad(fname)
-    except:
-        pass
+    
+    if args.filename:
+        w.ActionFileLoad(args.filename)
+        
     app.exec_()
