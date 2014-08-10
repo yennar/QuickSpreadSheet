@@ -78,6 +78,10 @@ class SpreadSheetQuickSheet07(QObject):
         #print "Sheet %s , %d changes" % (self.name() , len(diff.keys()))
     
 class SpreadSheetQuickSheet(QObject):
+
+    rowCount = 50
+    colCount = 24
+    
     def __init__(self,h = None,parent=None):
         QObject.__init__(self,parent)
         self.h = h
@@ -86,44 +90,52 @@ class SpreadSheetQuickSheet(QObject):
         return ''
     
     def row_range(self):
-        return (0,0)
+        return (0,self.rowCount - 1)
     
     def row_count(self):
-        return 0
+        return self.rowCount
     
     def col_range(self):
-        return (0,0)
+        return (0,self.colCount - 1)
 
     def col_count(self):
-        return 0
+        return self.colCount
     
     def cell_value(self,xrow,xcol):
         return ''
     
 class SpreadSheetQuick(QObject):
-    def __init__(self,fname,parent = None):
+    def __init__(self,fname = None,parent = None):
         QObject.__init__(self,parent)
-        self.fname = fname
-        if re.match(r'.*\.xlsx$',self.fname.lower()):
-            self.fmt = '2007'
-            self.workbook = openpyxl.load_workbook(filename = fname)
-        elif re.match(r'.*\.xls$',self.fname.lower()):
-            self.fmt = '1997'
-            self.workbook = xlrd.open_workbook(fname)
+        
+        if not fname is None:
+            self.fname = fname
+            if re.match(r'.*\.xlsx$',self.fname.lower()):
+                self.fmt = '2007'
+                self.workbook = openpyxl.load_workbook(filename = fname)
+            elif re.match(r'.*\.xls$',self.fname.lower()):
+                self.fmt = '1997'
+                self.workbook = xlrd.open_workbook(fname)
+            else:
+                self.fmt = ''
         else:
-            self.fmt = ''
+            self.fmt = 'default'
             
     def worksheets(self):
         if self.fmt == '2007':
             return self.workbook.get_sheet_names()
         elif self.fmt == '1997':
             return self.workbook.sheet_names()
+        elif self.fmt == 'default':
+            return ['Sheet1','Sheet2','Sheet3']
     
     def worksheet(self,name):
         if self.fmt == '2007':
             return SpreadSheetQuickSheet07(self.workbook.get_sheet_by_name(name),self)
         elif self.fmt == '1997':
             return SpreadSheetQuickSheet97(self.workbook.sheet_by_name(name),self)
+        elif self.fmt == 'default':
+            return SpreadSheetQuickSheet()
         
     def save_to_file(self,filename):
         if self.fmt == '2007':

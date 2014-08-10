@@ -13,8 +13,10 @@ import ui_utils
 
 
 class SpreadSheetModel(QAbstractTableModel):
-    defaultRowCount = 50
-    defaultColCount = 24
+    defaultRowCount = XLSProc.SpreadSheetQuickSheet.rowCount
+    defaultColCount = XLSProc.SpreadSheetQuickSheet.colCount
+    
+    logData = pyqtSignal(str,str,str)
     
     def __init__(self,sheet,parent=None):
         QAbstractTableModel.__init__(self,parent)
@@ -43,7 +45,7 @@ class SpreadSheetModel(QAbstractTableModel):
                 return XLSProc.XlsHeader(section)
             else:
                 return "%d" % (section + 1)
-        return QString()
+        return QVariant()
             
     def data(self,index,role = Qt.DisplayRole):
         if not index.isValid():
@@ -54,21 +56,31 @@ class SpreadSheetModel(QAbstractTableModel):
         
         elif role == Qt.DisplayRole or role == Qt.EditRole:
             key="%d,%d" % (index.row(),index.column())
-            if self._data.has_key(key):
-                return self._data[key]
-
+            return self.rawData(key)
+        
         return QString()
 
     def setData(self,index,value,role = Qt.DisplayRole):
         if role == Qt.DisplayRole or role == Qt.EditRole:
             key="%d,%d" % (index.row(),index.column())
-            self._data[key] = str(value.toString())
-            if not self._init_data.has_key(key):
-                self._init_data[key] = ''
+            prev = self.rawData(key)
+            self.setRawData(key,str(value.toString()))
             self.dataChanged.emit(index,index)
+            self.logData.emit(key,prev,str(value.toString()))
             return True
         return False
     
+    def setRawData(self,key,value):
+        self._data[key] = value
+        if not self._init_data.has_key(key):
+            self._init_data[key] = '' 
+            
+    def rawData(self,key):
+        if self._data.has_key(key):
+            return self._data[key]
+        else:
+            return ''
+        
     def flags(self,index):
         return Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ItemIsEnabled
     
@@ -143,7 +155,31 @@ class CellEditor(QWidget):
             self.requestData.emit(sheetId,currentIndex)
         return onCurrentIndexChange
     
+class LogManager(QObject):
+    def __init__(self,name,model,parent= None):
+        QObject.__init__(self,parent)
+        self.name = name
+        self.dataSource = model
+        self.dataSource.logData.connect(self.onDataChange)
+        self.lastKey = ''
+        self.lastValue = ''
+        self.lastPreValue = ''
+    def onDataChange(self,key,prevalue,value):
+        if not key == self.lastKey:
+            self.flush()
+            self.lastKey = key
+            self.lastPreValue = prevalue
+            
+        self.lastValue = value        
+    def flush(self,*kargs):
+        if self.lastKey == '':
+            return
         
+        print "[Log] %s : @(%s)  %s -> %s" % (self.name,self.lastKey,self.lastPreValue,self.lastValue)
+        
+        self.lastKey = ''
+        
+            
 
 class MainUI(QXSingleDocMainWindow):
 
@@ -178,12 +214,9 @@ class MainUI(QXSingleDocMainWindow):
         self.mainWidget.setLayout(layMain)
         self.setCentralWidget(self.mainWidget)
         
-        for x in range(3):
-            w = QTableView()
-            m = SpreadSheetModel(XLSProc.SpreadSheetQuickSheet(),self)
-            w.setModel(m)
-            self.tabFrame.addTab(w,"Sheet%d" % (x + 1))
-            
+        self.onFileLoad(True)
+        
+        self.logManagers = []       
         self.updateStatusBarMessage('Ready')
             
             
@@ -191,20 +224,25 @@ class MainUI(QXSingleDocMainWindow):
         def slotOnTableCellChange(self,xrow,xcol):
             sheet.set_cell_value()
             
-    def onFileLoad(self):
+    def onFileLoad(self,isNew = False):
 
         self.setCursor(Qt.BusyCursor)
+
+        if not isNew:        
+            fname = str(self.fileName())      
+            self.workbook = XLSProc.SpreadSheetQuick(fname,self)
+     
+            if self.workbook.fmt == '':
+                self.loadFinished(False)
+                self.updateStatusBarMessage("Error: Cannot open %s" % fname)
+                return
         
-        fname = str(self.fileName())
-        
-        self.workbook = XLSProc.SpreadSheetQuick(fname,self)
-        
-        if self.workbook.fmt == '':
-            self.loadFinished(False)
-            self.updateStatusBarMessage("Error: Cannot open %s" % fname)
-            return
+        else:
+            self.workbook = XLSProc.SpreadSheetQuick(None,self)
+            fname = ''
         
         self.tabFrame.clear()
+        self.logManagers = []
             
         if re.match(r'.*\.xls$',fname.lower()) and not self.fileCreateByMe():
             self.setFileReadOnly(True)
@@ -219,6 +257,11 @@ class MainUI(QXSingleDocMainWindow):
             m.dataChanged.connect(self.onModelDataChanged)
             self.tabFrame.addTab(w,sheet_name)
             w.selectionModel().currentChanged.connect(self.cellEditor.cloOnCurrentIndexChange(sheet_id))
+            
+            l = LogManager(sheet_name,m,self)
+            self.logManagers.append(l)
+            w.selectionModel().currentChanged.connect(l.flush)
+            self.tabFrame.currentChanged.connect(l.flush)
 
         if not self.fileCreateByMe():
             self.activeTab = 0
@@ -226,7 +269,8 @@ class MainUI(QXSingleDocMainWindow):
         self.tabFrame.setCurrentIndex(self.activeTab)       
         self.tabFrame.setFocus()
         self.updateStatusBarMessage('Ready')
-        self.loadFinished(True)
+        if not isNew:
+            self.loadFinished(True)
         self.unsetCursor()
         
     def onGetSheetCellDataToCellEditor(self,sheetid,index):
