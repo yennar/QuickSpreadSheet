@@ -104,6 +104,7 @@ class SpreadSheetModel(QAbstractTableModel):
                 
 class CellEditor(QWidget):
     
+    
     requestData = pyqtSignal(int,QModelIndex)
     setData = pyqtSignal(int,int,int,str)
     
@@ -155,7 +156,21 @@ class CellEditor(QWidget):
             self.requestData.emit(sheetId,currentIndex)
         return onCurrentIndexChange
     
-class LogManager(QObject):
+
+class SpreadSheetUndo(QUndoCommand):
+    def __init__(self,name,model,key,prev,curv,parent = None):
+        QUndoCommand.__init__(self,name,parent)
+        self.model = model
+        self.key = key
+        self.prev = prev
+        self.curv = curv
+    def undo(self):
+        self.model.setRawData(self.key,self.prev)        
+    def redo(self):
+        self.model.setRawData(self.key,self.curv)
+        
+
+class LogManager(QUndoStack):
     def __init__(self,name,model,parent= None):
         QObject.__init__(self,parent)
         self.name = name
@@ -164,6 +179,7 @@ class LogManager(QObject):
         self.lastKey = ''
         self.lastValue = ''
         self.lastPreValue = ''
+
     def onDataChange(self,key,prevalue,value):
         if not key == self.lastKey:
             self.flush()
@@ -176,8 +192,10 @@ class LogManager(QObject):
             return
         
         print "[Log] %s : @(%s)  %s -> %s" % (self.name,self.lastKey,self.lastPreValue,self.lastValue)
+        self.push(SpreadSheetUndo(self.name,self.model,self.lastKey,self.lastPreValue,self.lastValue))
         
         self.lastKey = ''
+
         
             
 

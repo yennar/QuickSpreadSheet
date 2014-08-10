@@ -114,7 +114,9 @@ class QXSingleDocMainWindow(QMainWindow):
         self.actionFileNew = QXAction('&New',self,triggered=self.ActionFileNew)
         self.actionFileOpen = QXAction('&Open',self,triggered=self.ActionFileOpen)
         self.actionFileSave = QXAction('&Save',self,triggered=self.ActionFileSave)
-        self.actionFileSaveAs = QXAction('Save &As',self,triggered=self.ActionFileSaveAs)        
+        self.actionFileSaveAs = QXAction('Save &As',self,triggered=self.ActionFileSaveAs)
+        
+        self.actionEditUndoDefault = 
 
         #toolbar
         
