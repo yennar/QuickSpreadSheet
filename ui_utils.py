@@ -178,7 +178,13 @@ class QXSingleDocMainWindow(QMainWindow):
                 return "\"%s\" \"%s\"" % (appExec,appFile)
             else:
                 return "\"%s\"" %appExec
-    
+        elif platform.system() == 'Windows':
+            appExecDir = QDir(appExec)
+            if appExecDir.dirName().toLower() == 'python.exe' or appExecDir.dirName().toLower() == 'pythonw.exe':
+                # The script is executed by python
+                return "\"%s\" \"%s\"" % (appExec,appFile)
+            else:
+                return "\"%s\"" %appExec    
     
         
     def ActionFileNew(self):
@@ -238,6 +244,7 @@ class QXSingleDocMainWindow(QMainWindow):
         if (self.isWindowModified()):
             msgBox = QMessageBox(self)
             msgBox.setIcon(QMessageBox.Question)
+            msgBox.setTitle(self.appName)
             msgBox.setText("The document %s has been modified." % self.fileName())
             msgBox.setInformativeText("Do you want to save your changes?")
             msgBox.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
