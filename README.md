@@ -10,9 +10,11 @@ Very small and fast application for viewing and editing Microsoft Excel (2000,XP
 1. Install PyQt4 for Python 2.7 from http://www.riverbankcomputing.co.uk/software/pyqt/download
 2. Install xlrd,xlwt and openpyxl:
 
-    sudo easy_install xlrd
-    sudo easy_install xlwt
-    sudo easy_install openpyxl
+
+        sudo easy_install xlrd
+        sudo easy_install xlwt
+        sudo easy_install openpyxl
+
 
 3. Enjoy
 
