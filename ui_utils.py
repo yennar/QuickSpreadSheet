@@ -116,7 +116,8 @@ class QXSingleDocMainWindow(QMainWindow):
         self.actionFileSave = QXAction('&Save',self,triggered=self.ActionFileSave)
         self.actionFileSaveAs = QXAction('Save &As',self,triggered=self.ActionFileSaveAs)
         
-        self.actionEditUndoDefault = 
+        self.actionEditUndo = QXAction('&Undo',self,triggered=self.onEditUndo)
+        self.actionEditRedo = QXAction('&Redo',self,triggered=self.onEditRedo)
 
         #toolbar
         
@@ -126,6 +127,11 @@ class QXSingleDocMainWindow(QMainWindow):
             self.tbrMain.addAction(self.actionFileNew)
             self.tbrMain.addAction(self.actionFileOpen)
             self.tbrMain.addAction(self.actionFileSave)
+            
+            self.tbrMain.addSeparator()
+            
+            self.tbrMain.addAction(self.actionEditUndo)
+            self.tbrMain.addAction(self.actionEditRedo)            
 
             
             
@@ -172,7 +178,8 @@ class QXSingleDocMainWindow(QMainWindow):
                 return "\"%s\" \"%s\"" % (appExec,appFile)
             else:
                 return "\"%s\"" %appExec
-        
+    
+    
         
     def ActionFileNew(self):
         execStr = self.getAppExecutable()
@@ -206,6 +213,9 @@ class QXSingleDocMainWindow(QMainWindow):
             if self.onFileSaveAs(fileName):            
                 self.ActionFileLoad(fileName)
 
+    
+        
+
     def onFileLoad(self):
         pass
 
@@ -213,6 +223,12 @@ class QXSingleDocMainWindow(QMainWindow):
         return False
     
     def onFileSave(self,fileName):
+        pass
+
+    def onEditUndo(self):
+        pass
+    
+    def onEditRedo(self):
         pass
     
     def updateStatusBarMessage(self,s):

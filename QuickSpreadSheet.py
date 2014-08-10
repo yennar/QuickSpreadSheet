@@ -11,6 +11,12 @@ import re
 import XLSProc
 import ui_utils
 
+_print_enabled = True
+
+def xprint(s):
+    if _print_enabled:
+        print s
+
 
 class SpreadSheetModel(QAbstractTableModel):
     defaultRowCount = XLSProc.SpreadSheetQuickSheet.rowCount
@@ -60,20 +66,30 @@ class SpreadSheetModel(QAbstractTableModel):
         
         return QString()
 
-    def setData(self,index,value,role = Qt.DisplayRole):
+    def setData(self,index,value,role = Qt.DisplayRole,noLog = False):
         if role == Qt.DisplayRole or role == Qt.EditRole:
             key="%d,%d" % (index.row(),index.column())
             prev = self.rawData(key)
-            self.setRawData(key,str(value.toString()))
+            try:
+                value = str(value.toString())
+            except:
+                value = str(value)
+            self.setRawData(key,value)
             self.dataChanged.emit(index,index)
-            self.logData.emit(key,prev,str(value.toString()))
+            if not noLog:
+                self.logData.emit(key,prev,value)
             return True
         return False
     
-    def setRawData(self,key,value):
+    def setRawData(self,key,value,emitSignal = False):
         self._data[key] = value
         if not self._init_data.has_key(key):
             self._init_data[key] = '' 
+    
+    def setValue(self,key,value,noLog = True):
+        a = str(key).split(',')
+        index = self.index(int(a[0]),int(a[1]),QModelIndex())
+        self.setData(index, QVariant(str(value)),Qt.DisplayRole,noLog)
             
     def rawData(self,key):
         if self._data.has_key(key):
@@ -90,10 +106,11 @@ class SpreadSheetModel(QAbstractTableModel):
     def diff(self):
         rtn = {}
         for key in self._data:
-            val = re.sub(r'^\s+','',self._data[key])
+            key = str(key)
+            val = re.sub(r'^\s+','',str(self._data[key]))
             val = re.sub(r'\s+$','',val)
             
-            val_init = re.sub(r'^\s+','',self._init_data[key])
+            val_init = re.sub(r'^\s+','',str(self._init_data[key]))
             val_init = re.sub(r'\s+$','',val_init)
             if val != val_init:
                 rtn[key] = val
@@ -157,20 +174,8 @@ class CellEditor(QWidget):
         return onCurrentIndexChange
     
 
-class SpreadSheetUndo(QUndoCommand):
-    def __init__(self,name,model,key,prev,curv,parent = None):
-        QUndoCommand.__init__(self,name,parent)
-        self.model = model
-        self.key = key
-        self.prev = prev
-        self.curv = curv
-    def undo(self):
-        self.model.setRawData(self.key,self.prev)        
-    def redo(self):
-        self.model.setRawData(self.key,self.curv)
-        
 
-class LogManager(QUndoStack):
+class LogManager(QObject):
     def __init__(self,name,model,parent= None):
         QObject.__init__(self,parent)
         self.name = name
@@ -179,6 +184,10 @@ class LogManager(QUndoStack):
         self.lastKey = ''
         self.lastValue = ''
         self.lastPreValue = ''
+        
+        self.localStack = {}
+        self.localStackCurPtr = -1
+        self.localStackEndPtr = -1
 
     def onDataChange(self,key,prevalue,value):
         if not key == self.lastKey:
@@ -191,12 +200,41 @@ class LogManager(QUndoStack):
         if self.lastKey == '':
             return
         
-        print "[Log] %s : @(%s)  %s -> %s" % (self.name,self.lastKey,self.lastPreValue,self.lastValue)
-        self.push(SpreadSheetUndo(self.name,self.model,self.lastKey,self.lastPreValue,self.lastValue))
+        xprint("set_cell_value '%s' %s # %s" % (self.lastKey,self.lastValue,self.lastPreValue))
         
+        self.localStackCurPtr += 1
+        self.localStack[self.localStackCurPtr] = {
+            'dataSource' : self.dataSource,
+            'key' : self.lastKey,
+            'prev' : self.lastPreValue,
+            'curv' : self.lastValue
+        }
+        self.localStackEndPtr = self.localStackCurPtr
+                
         self.lastKey = ''
 
+    def undo(self):
+        self.flush()
+        if self.canUndo():           
+            item = self.localStack[self.localStackCurPtr]
+            xprint("set_cell_value '%s' %s # undo %d" % (item['key'],item['prev'],self.localStackCurPtr))
+            item['dataSource'].setValue(item['key'],item['prev'],True)
+            self.localStackCurPtr -= 1
         
+    def canUndo(self):
+        return self.localStackCurPtr >= 0
+        
+    def redo(self):
+        self.flush()
+        if self.canRedo():
+            self.localStackCurPtr += 1
+            item = self.localStack[self.localStackCurPtr]
+            xprint("set_cell_value '%s' %s # redo %d" % (item['key'],item['curv'],self.localStackCurPtr))
+            item['dataSource'].setValue(item['key'],item['curv'],True)
+                        
+
+    def canRedo(self):
+        return self.localStackCurPtr < self.localStackEndPtr        
             
 
 class MainUI(QXSingleDocMainWindow):
@@ -215,9 +253,8 @@ class MainUI(QXSingleDocMainWindow):
         
         self.tabFrame = QTabWidget()
         self.tabFrame.setTabPosition(QTabWidget.South)
-        self.tabFrame.currentChanged.connect(self.cellEditor.onSheetIdChange)
-        
-
+        self.tabFrame.setDocumentMode(True)
+        self.tabFrame.currentChanged.connect(self.onCurrentTabChanged)
         
         layMain = QVBoxLayout()
         layMain.addWidget(self.cellEditor)
@@ -236,7 +273,10 @@ class MainUI(QXSingleDocMainWindow):
         
         self.logManagers = []       
         self.updateStatusBarMessage('Ready')
-            
+    
+    def onCurrentTabChanged(self,sheetid):
+        xprint("sheet_active %d # %s" % (sheetid,self.tabFrame.tabText(sheetid)))
+        self.cellEditor.onSheetIdChange(sheetid)
             
     def createSlotOnTableCellChange(self,sheet):
         def slotOnTableCellChange(self,xrow,xcol):
@@ -247,9 +287,9 @@ class MainUI(QXSingleDocMainWindow):
         self.setCursor(Qt.BusyCursor)
 
         if not isNew:        
-            fname = str(self.fileName())      
-            self.workbook = XLSProc.SpreadSheetQuick(fname,self)
-     
+            fname = str(self.fileName())
+            xprint("open '%s'" % fname)
+            self.workbook = XLSProc.SpreadSheetQuick(fname,self)     
             if self.workbook.fmt == '':
                 self.loadFinished(False)
                 self.updateStatusBarMessage("Error: Cannot open %s" % fname)
@@ -258,6 +298,7 @@ class MainUI(QXSingleDocMainWindow):
         else:
             self.workbook = XLSProc.SpreadSheetQuick(None,self)
             fname = ''
+            xprint('new')
         
         self.tabFrame.clear()
         self.logManagers = []
@@ -284,7 +325,8 @@ class MainUI(QXSingleDocMainWindow):
         if not self.fileCreateByMe():
             self.activeTab = 0
             
-        self.tabFrame.setCurrentIndex(self.activeTab)       
+        self.tabFrame.setCurrentIndex(self.activeTab)
+        self.onCurrentTabChanged(self.activeTab)
         self.tabFrame.setFocus()
         self.updateStatusBarMessage('Ready')
         if not isNew:
@@ -341,7 +383,11 @@ class MainUI(QXSingleDocMainWindow):
             self.unsetCursor()
             return True            
     
-        
+    def onEditUndo(self):
+        self.logManagers[self.tabFrame.currentIndex()].undo()
+    def onEditRedo(self):
+        self.logManagers[self.tabFrame.currentIndex()].redo()
+    
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
