@@ -6,7 +6,7 @@ QuickSpreadSheet
 * Multiple platforms support:
     + Mac OSX 10.6 and higher
     + Windows 2000 and higher
-    + Linux (x86 and ARM)
+    + Linux (x86,ARM and Loongson)
     
 ![snapshot](https://raw.githubusercontent.com/yennar/QuickSpreadSheet/master/web/snapshot_osx.png)
 
