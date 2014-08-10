@@ -10,6 +10,8 @@ QuickSpreadSheet
     + Windows 2000 and higher
     + Linux (x86 and ARM)
 
+
+
  Install 
 ---------
 
