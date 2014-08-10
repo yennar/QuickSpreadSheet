@@ -61,7 +61,7 @@ class QXAction(QAction):
     def __init__(self,*kargs,**kwargs):
         QAction.__init__(self,*kargs,**kwargs)
         kq = QKeySequence.mnemonic(self.text())
-        if kq.isEmpty():
+        if kq.isEmpty() or platform.system() == 'Windows':
             if self.text().contains('&'):
                 t = self.text().replace('&','')
                 try:
