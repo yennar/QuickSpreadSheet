@@ -257,7 +257,7 @@ class QXSingleDocMainWindow(QMainWindow):
         
         
 
-    def initDefaultUI(self,hasToolBar = True,hasMenuBar = False):
+    def initDefaultUI(self,hasToolBar = True,hasMenuBar = True):
         d = QApplication.desktop()
         screenWidget = d.screen(d.primaryScreen())
         w = screenWidget.size().height()
@@ -274,7 +274,8 @@ class QXSingleDocMainWindow(QMainWindow):
         self.appName = re.sub(r'\..*$','',self.appName)
         
         self.setWindowTitle("Untitled[*] - %s" % self.appName)   
-        self.setFileSaveAsSuffix("All Files (*.*)")
+        self._fileOpenSuffix = "All Files (*.*)"
+        self._fileSaveAsSuffix = "All Files (*.*)"
         self.setFileReadOnly(False)
         self._fileName = None
         self.setFileCreateByMe(False)
@@ -308,12 +309,38 @@ class QXSingleDocMainWindow(QMainWindow):
             self.tbrMain.addAction(self.actionEditCut)
             self.tbrMain.addAction(self.actionEditCopy)
             self.tbrMain.addAction(self.actionEditPaste)
-            
-            
-        self.setUnifiedTitleAndToolBarOnMac(True)        
+                        
+        self.setUnifiedTitleAndToolBarOnMac(True)    
         
-    def setFileSaveAsSuffix(self,s):
-        self._fileSaveAsSuffix = s
+        if hasMenuBar:
+            self.mnuMain = self.menuBar()
+            mnuFile = self.mnuMain.addMenu('&File')
+            mnuFile.addAction(self.actionFileNew)
+            mnuFile.addAction(self.actionFileOpen)
+            mnuFile.addAction(self.actionFileSave)
+            mnuFile.addAction(self.actionFileSaveAs)
+            
+            mnuEdit = self.mnuMain.addMenu('&Edit')
+            mnuEdit.addAction(self.actionEditUndo)
+            mnuEdit.addAction(self.actionEditRedo)
+            mnuEdit.addSeparator()
+            mnuEdit.addAction(self.actionEditCut)
+            mnuEdit.addAction(self.actionEditCopy)   
+            mnuEdit.addAction(self.actionEditPaste) 
+        
+    def setFileDialogSuffix(self,s):
+        allFormat = []
+        for i in str(s).split(';;'):
+            m = re.match(r'.*\(([^\)]+)\)\s*$',i)
+            if m:
+                for j in re.split(r'\s+',m.group(1)):                  
+                    allFormat.append(j)
+        allFormatStr='All supported format (%s)' % " ".join(allFormat)
+        self._fileOpenSuffix = allFormatStr + ';;' + s 
+        if not re.match(r'.*;;\s*$',s):
+            s = s + ';;'
+        self._fileSaveAsSuffix = s + allFormatStr
+        
         
     def setFileCreateByMe(self,t):
         self._fileCreateByMe = t
@@ -367,7 +394,7 @@ class QXSingleDocMainWindow(QMainWindow):
         QProcess.startDetached(execStr)
 
     def ActionFileOpen(self):
-        fileName = QFileDialog.getOpenFileName(self,"Open",QDir.currentPath(),self._fileSaveAsSuffix)
+        fileName = QFileDialog.getOpenFileName(self,"Open",QDir.currentPath(),self._fileOpenSuffix)
         if not fileName is None and fileName != '':
             self.setFileCreateByMe(False)
             self.ActionFileLoad(fileName)

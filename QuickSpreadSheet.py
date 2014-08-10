@@ -274,7 +274,7 @@ class MainUI(QXSingleDocMainWindow):
        
     def initUI(self):
 
-        self.setFileSaveAsSuffix("All Support (*.xlsx *.xls *.tsv *.csv);;Excel WorkBook (*.xlsx);;Excel 1997 - 2003 WorkBook (*.txt);;Tab Seperated Value (*.tsv);;Comma Seperated Value (*.csv)")
+        self.setFileDialogSuffix("Excel 2007,2008,2010,2011,2013 WorkBook (*.xlsx);;Excel 2000,XP,2003 WorkBook (*.xls);;Tab Seperated Value (*.tsv);;Comma Seperated Value (*.csv)")
 
         self.cellEditor = CellEditor()
         self.cellEditor.requestData.connect(self.onGetSheetCellDataToCellEditor)
