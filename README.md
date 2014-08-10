@@ -18,11 +18,15 @@ Very small and fast application for viewing and editing Microsoft Excel (2000,XP
 
 3. Enjoy
 
-    ./QuickSpreadSheet.py
-        
+
+        ./QuickSpreadSheet.py
+
+    
 ### Windows (Binary)
 
-Enjoy /build_win32/dist/QuickSpreadSheet.exe
+Enjoy
+
+        /build_win32/dist/QuickSpreadSheet.exe
 
 ### Windows (Source)
 
@@ -31,29 +35,33 @@ Enjoy /build_win32/dist/QuickSpreadSheet.exe
 3. Install Python setuptools from https://pypi.python.org/pypi/setuptools
 4. Install xlrd,xlwt and openpyxl:
 
-    sudo easy_install xlrd
-    sudo easy_install xlwt
-    sudo easy_install openpyxl
+
+        sudo easy_install xlrd
+        sudo easy_install xlwt
+        sudo easy_install openpyxl
+
 
 5. Enjoy
 
-    python QuickSpreadSheet.py
+
+        python QuickSpreadSheet.py
+
         
 ### Linux (Debian/Ubuntu)
 1. Install PyQt4 for Python 2.7
     
-    sudo apt-get install python-qt4
+        sudo apt-get install python-qt4
     
 3. Install Python setuptools
 
-    sudo apt-get install python-setuptools
+        sudo apt-get install python-setuptools
 
 4. Install xlrd,xlwt and openpyxl:
 
-    sudo easy_install xlrd
-    sudo easy_install xlwt
-    sudo easy_install openpyxl
+        sudo easy_install xlrd
+        sudo easy_install xlwt
+        sudo easy_install openpyxl
 
 5. Enjoy
 
-    python QuickSpreadSheet.py
+        python QuickSpreadSheet.py
