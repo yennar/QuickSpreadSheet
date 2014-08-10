@@ -3,6 +3,8 @@ QuickSpreadSheet
 
 Very small and fast application for viewing and editing Microsoft Excel (2000,XP,2003,2004,2007,2010,2011,2013) SpreadSheets
 
+![snapshot](https://raw.githubusercontent.com/yennar/QuickSpreadSheet/master/snapshot.png)
+
  Install 
 ---------
 
