@@ -29,8 +29,14 @@ class SpreadSheetQuickSheet97(QObject):
         return self.h.ncols
     
     def cell_value(self,row,col):
-        return self.h.cell_value(row,col)
-    
+        v = self.h.cell_value(row,col)
+        if v is None:
+            return ''
+        try:
+            s = str(v)
+        except:
+            s = v.encode('utf-8')
+        return s    
     def sync(self,diff):
         pass
     
@@ -67,7 +73,7 @@ class SpreadSheetQuickSheet07(QObject):
         try:
             s = str(cell.value)
         except:
-            s = cell.value
+            s = cell.value.encode('utf-8')
         return s
     
     def sync(self,diff):

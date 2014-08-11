@@ -376,7 +376,7 @@ class QXSingleDocMainWindow(QMainWindow):
         appExec = QCoreApplication.applicationFilePath()
         appFile = sys.argv[0]
         #print platform.system(),appExec,appFile
-        if platform.system() == 'Darwin':
+        if platform.system() == 'Darwin' or platform.system() == 'Linux':
             appExecDir = QDir(appExec)
             if appExecDir.dirName().toLower() == 'python':
                 # The script is executed by python
