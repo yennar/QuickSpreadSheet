@@ -18,9 +18,9 @@ QuickSpreadSheet
 
 ### OSX
 1. Install PyQt4 for Python 2.7 from http://www.riverbankcomputing.co.uk/software/pyqt/download
-2. Install xlrd,xlwt and openpyxl:
+2. Install LibQuickUI,xlrd,xlwt and openpyxl:
 
-
+        sudo easy_install LibQuickUI
         sudo easy_install xlrd
         sudo easy_install xlwt
         sudo easy_install openpyxl
@@ -45,7 +45,7 @@ Enjoy
 3. Install Python setuptools from https://pypi.python.org/pypi/setuptools
 4. Install xlrd,xlwt and openpyxl:
 
-
+        sudo easy_install LibQuickUI
         sudo easy_install xlrd
         sudo easy_install xlwt
         sudo easy_install openpyxl
@@ -68,6 +68,7 @@ Enjoy
 
 4. Install xlrd,xlwt and openpyxl:
 
+        sudo easy_install LibQuickUI
         sudo easy_install xlrd
         sudo easy_install xlwt
         sudo easy_install openpyxl
