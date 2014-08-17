@@ -2,13 +2,13 @@
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-from ui_utils import *
+from QuickUI.QXSingleDocmainWindow import *
+from QuickUI.QXTableView import *
 
 import sys
 import re
 
 import XLSProc
-import ui_utils
 
 _print_enabled = False
 
